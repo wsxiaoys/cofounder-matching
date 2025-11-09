@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
 
 // Define the type for founder persona
 interface FounderPersona {
@@ -9,7 +12,19 @@ interface FounderPersona {
 interface MatchingSessionRequest {
   founderA: FounderPersona;
   founderB: FounderPersona;
+  num?: number; // Number of matching sessions to generate (default: 3)
 }
+
+// Define the schema for a conversation message
+const messageSchema = z.object({
+  role: z.enum(['founderA', 'founderB']),
+  content: z.string().describe('The message content from this founder')
+});
+
+// Define the schema for a single matching session
+const matchingSessionSchema = z.object({
+  history: z.array(messageSchema).describe('Conversation history between the two founders, alternating between founderA and founderB, 6-10 messages total')
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,34 +46,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate multiple matching sessions with conversation history between founders
-    const sessions = [];
+    // Get number of sessions to generate (default to 3)
+    const numSessions = body.num && body.num > 0 ? body.num : 3;
+
+    // Generate matching sessions with conversation history using AI
+    const matchings = [];
     
-    // Create 3 sample matching sessions
-    for (let i = 0; i < 3; i++) {
-      const sessionId = `session_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Create realistic conversation history between the founders
-      const history = [
-        { role: 'founderA' as const, content: `Hi, I saw your profile and think we might be a good match. ${body.founderA.description}` },
-        { role: 'founderB' as const, content: `Hello! Thanks for reaching out. ${body.founderB.description} I would love to learn more about your background.` },
-        { role: 'founderA' as const, content: "I am looking for a co-founder to help build a new product. I think your background could complement mine well." },
-        { role: 'founderB' as const, content: "That sounds interesting! I am definitely open to exploring opportunities. What kind of product are you working on?" },
-        { role: 'founderA' as const, content: "I am building an AI-powered platform for small businesses. What is your experience with B2B sales?" },
-        { role: 'founderB' as const, content: "I have 5 years of experience in B2B SaaS sales, particularly in the SMB market. I have helped scale companies from seed to Series A." },
-        { role: 'founderA' as const, content: "That is exactly what we need! Would you be interested in scheduling a call to discuss further?" },
-        { role: 'founderB' as const, content: "Absolutely! I would love to learn more about your vision and see if we might be a good fit. When works for you?" }
-      ];
-      
-      sessions.push({
-        id: sessionId,
-        history: history
+    for (let i = 0; i < numSessions; i++) {
+      const result = await generateObject({
+        model: openai('gpt-4o-mini'),
+        schema: matchingSessionSchema,
+        prompt: `You are a co-founder matching assistant. Generate a realistic conversation scenario between two founders who are exploring a potential co-founder partnership.
+
+Founder A Profile:
+${body.founderA.description}
+
+Founder B Profile:
+${body.founderB.description}
+
+Create a natural conversation where:
+- The founders introduce themselves and their backgrounds
+- They explore potential synergies and complementary skills
+- They discuss their goals, experience, and what they're looking for in a co-founder
+- The conversation feels authentic and progresses naturally
+- The conversation should have 6-10 messages alternating between founderA and founderB
+- Explore different aspects of the potential partnership (e.g., technical fit, vision alignment, work style compatibility)
+
+Make the conversation feel realistic, professional, and exploratory - they should be getting to know each other and evaluating fit.`
+      });
+
+      matchings.push({
+        id: `session_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
+        history: result.object.history
       });
     }
 
     // Return list of matching sessions
     return NextResponse.json({ 
-      matchings: sessions 
+      matchings 
     }, { status: 201 });
 
   } catch (error) {
@@ -70,7 +95,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optional: Add GET method to retrieve sessions with sample data
+// Optional: Add GET method to retrieve sample sessions
 export async function GET() {
   // Return sample matching sessions with conversation history
   return NextResponse.json({
