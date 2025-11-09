@@ -7,6 +7,7 @@ import Image from 'next/image';
 export default function Home() {
   const [founderAUrl, setFounderAUrl] = useState('');
   const [founderBUrl, setFounderBUrl] = useState('');
+  const [numSessions, setNumSessions] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function Home() {
         body: JSON.stringify({
           founderA: { description: founderADescription },
           founderB: { description: founderBDescription },
-          num: 5 // Generate 5 sessions
+          num: numSessions
         })
       });
 
@@ -147,6 +148,30 @@ export default function Home() {
                 disabled={isLoading}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
+            </div>
+
+            <div>
+              <label htmlFor="numSessions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Number of Matching Sessions
+              </label>
+              <input
+                id="numSessions"
+                type="number"
+                min="1"
+                max="20"
+                value={numSessions}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value) && value > 0 && value <= 20) {
+                    setNumSessions(value);
+                  }
+                }}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Generate 1-20 matching conversation sessions (default: 3)
+              </p>
             </div>
 
             <button
