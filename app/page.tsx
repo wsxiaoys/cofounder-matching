@@ -75,6 +75,9 @@ export default function Home() {
       sessionStorage.setItem('matchingData', JSON.stringify(matchingData));
       sessionStorage.setItem('founderAUrl', founderAUrl);
       sessionStorage.setItem('founderBUrl', founderBUrl);
+      // Store LinkedIn raw data for sharing functionality
+      sessionStorage.setItem('founderAData', JSON.stringify(founderAData));
+      sessionStorage.setItem('founderBData', JSON.stringify(founderBData));
       
       router.push('/matching');
 
