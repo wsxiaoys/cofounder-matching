@@ -49,11 +49,9 @@ export async function POST(request: NextRequest) {
     // Get number of sessions to generate (default to 3)
     const numSessions = body.num && body.num > 0 ? body.num : 3;
 
-    // Generate matching sessions with conversation history using AI
-    const matchings = [];
-    
-    for (let i = 0; i < numSessions; i++) {
-      const result = await generateObject({
+    // Generate matching sessions with conversation history using AI in parallel
+    const sessionPromises = Array.from({ length: numSessions }, (_, i) => 
+      generateObject({
         model: openai('gpt-4o-mini'),
         schema: matchingSessionSchema,
         prompt: `You are a co-founder matching assistant. Generate a realistic conversation scenario between two founders who are exploring a potential co-founder partnership.
@@ -73,13 +71,14 @@ Create a natural conversation where:
 - Explore different aspects of the potential partnership (e.g., technical fit, vision alignment, work style compatibility)
 
 Make the conversation feel realistic, professional, and exploratory - they should be getting to know each other and evaluating fit.`
-      });
-
-      matchings.push({
+      }).then(result => ({
         id: `session_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
         history: result.object.history
-      });
-    }
+      }))
+    );
+
+    // Wait for all sessions to be generated in parallel
+    const matchings = await Promise.all(sessionPromises);
 
     // Return list of matching sessions
     return NextResponse.json({ 
