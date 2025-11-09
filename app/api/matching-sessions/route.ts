@@ -11,15 +11,6 @@ interface MatchingSessionRequest {
   founderB: FounderPersona;
 }
 
-// Define the type for the response
-interface MatchingSessionResponse {
-  id: string;
-  history: Array<{
-    role: 'assistant' | 'user';
-    content: string;
-  }>;
-}
-
 export async function POST(request: NextRequest) {
   try {
     // Parse the JSON body from the request
@@ -39,30 +30,35 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // Generate a unique session ID
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create sample conversation history for the matching session
-    const sampleHistory = [
-      { role: 'assistant' as const, content: 'I\'ve analyzed both founder profiles. Let me help facilitate this introduction.' },
-      { role: 'user' as const, content: 'Tell me about the potential match between these two founders.' },
-      { role: 'assistant' as const, content: `Based on the descriptions, I see a complementary partnership opportunity. Founder A (${body.founderA.description}) and Founder B (${body.founderB.description}) appear to have different but potentially compatible skill sets.` }
-    ];
+    // Generate multiple matching sessions with conversation history between founders
+    const sessions = [];
+    
+    // Create 3 sample matching sessions
+    for (let i = 0; i < 3; i++) {
+      const sessionId = `session_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create realistic conversation history between the founders
+      const history = [
+        { role: 'founderA' as const, content: `Hi, I saw your profile and think we might be a good match. ${body.founderA.description}` },
+        { role: 'founderB' as const, content: `Hello! Thanks for reaching out. ${body.founderB.description} I would love to learn more about your background.` },
+        { role: 'founderA' as const, content: "I am looking for a co-founder to help build a new product. I think your background could complement mine well." },
+        { role: 'founderB' as const, content: "That sounds interesting! I am definitely open to exploring opportunities. What kind of product are you working on?" },
+        { role: 'founderA' as const, content: "I am building an AI-powered platform for small businesses. What is your experience with B2B sales?" },
+        { role: 'founderB' as const, content: "I have 5 years of experience in B2B SaaS sales, particularly in the SMB market. I have helped scale companies from seed to Series A." },
+        { role: 'founderA' as const, content: "That is exactly what we need! Would you be interested in scheduling a call to discuss further?" },
+        { role: 'founderB' as const, content: "Absolutely! I would love to learn more about your vision and see if we might be a good fit. When works for you?" }
+      ];
+      
+      sessions.push({
+        id: sessionId,
+        history: history
+      });
+    }
 
-    // Create the matching session response
-    const matchingSession: MatchingSessionResponse = {
-      id: sessionId,
-      history: sampleHistory
-    };
-
-    // Here you could add logic to:
-    // 1. Calculate compatibility score based on persona descriptions
-    // 2. Store the session in a database
-    // 3. Send notifications, etc.
-
-    // Return a list of matching sessions (for now, just the current one)
+    // Return list of matching sessions
     return NextResponse.json({ 
-      matchings: [matchingSession] 
+      matchings: sessions 
     }, { status: 201 });
 
   } catch (error) {
@@ -74,12 +70,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optional: Add GET method to retrieve sessions
+// Optional: Add GET method to retrieve sessions with sample data
 export async function GET() {
-  // This would typically fetch from a database
-  // For now, return an empty array or sample data
+  // Return sample matching sessions with conversation history
   return NextResponse.json({
-    sessions: [],
-    message: 'Matching sessions endpoint is working'
+    matchings: [
+      {
+        id: `session_sample_1_${Math.random().toString(36).substr(2, 9)}`,
+        history: [
+          { role: 'founderA' as const, content: 'Hi, I am a technical founder looking for a business partner.' },
+          { role: 'founderB' as const, content: 'Hello! I am a business-focused founder with experience in SaaS. Tell me about your technical background.' },
+          { role: 'founderA' as const, content: 'I have 8 years in full-stack development, specializing in AI/ML applications.' },
+          { role: 'founderB' as const, content: 'Perfect! I have experience bringing AI products to market. Let us discuss potential opportunities.' }
+        ]
+      },
+      {
+        id: `session_sample_2_${Math.random().toString(36).substr(2, 9)}`,
+        history: [
+          { role: 'founderA' as const, content: 'I am building a fintech platform and need a co-founder with regulatory experience.' },
+          { role: 'founderB' as const, content: 'Interesting! I have experience in fintech compliance and banking partnerships.' },
+          { role: 'founderA' as const, content: 'Great! Can you share your experience with regulatory frameworks?' },
+          { role: 'founderB' as const, content: 'I have worked on PCI compliance, KYC/AML processes, and have banking partnerships in place.' },
+          { role: 'founderA' as const, content: 'This sounds like a great match! When can we schedule a call?' }
+        ]
+      }
+    ]
   });
 }
