@@ -1,7 +1,8 @@
 'use client';
-import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Message {
   role: 'founderA' | 'founderB';
@@ -17,140 +18,66 @@ interface MatchingData {
   matchings: MatchingSession[];
 }
 
-// 示例数据 - 在实际应用中，这可能来自API
-const sampleData: MatchingData = {
-  "matchings": [
-    {
-      "id": "session_1762664964097_0_vgvw893yf",
-      "history": [
-        {
-          "role": "founderA",
-          "content": "Hi, I saw your profile and think we might be a good match. Technical co-founder with 5 years experience in AI/ML"
-        },
-        {
-          "role": "founderB",
-          "content": "Hello! Thanks for reaching out. Business co-founder with experience in B2B SaaS sales I would love to learn more about your background."
-        },
-        {
-          "role": "founderA",
-          "content": "I am looking for a co-founder to help build a new product. I think your background could complement mine well."
-        },
-        {
-          "role": "founderB",
-          "content": "That sounds interesting! I am definitely open to exploring opportunities. What kind of product are you working on?"
-        },
-        {
-          "role": "founderA",
-          "content": "I am building an AI-powered platform for small businesses. What is your experience with B2B sales?"
-        },
-        {
-          "role": "founderB",
-          "content": "I have 5 years of experience in B2B SaaS sales, particularly in the SMB market. I have helped scale companies from seed to Series A."
-        },
-        {
-          "role": "founderA",
-          "content": "That is exactly what we need! Would you be interested in scheduling a call to discuss further?"
-        },
-        {
-          "role": "founderB",
-          "content": "Absolutely! I would love to learn more about your vision and see if we might be a good fit. When works for you?"
-        }
-      ]
-    },
-    {
-      "id": "session_1762664964097_1_6iqt6stt9",
-      "history": [
-        {
-          "role": "founderA",
-          "content": "Hi, I saw your profile and think we might be a good match. Technical co-founder with 5 years experience in AI/ML"
-        },
-        {
-          "role": "founderB",
-          "content": "Hello! Thanks for reaching out. Business co-founder with experience in B2B SaaS sales I would love to learn more about your background."
-        },
-        {
-          "role": "founderA",
-          "content": "I am looking for a co-founder to help build a new product. I think your background could complement mine well."
-        },
-        {
-          "role": "founderB",
-          "content": "That sounds interesting! I am definitely open to exploring opportunities. What kind of product are you working on?"
-        },
-        {
-          "role": "founderA",
-          "content": "I am building an AI-powered platform for small businesses. What is your experience with B2B sales?"
-        },
-        {
-          "role": "founderB",
-          "content": "I have 5 years of experience in B2B SaaS sales, particularly in the SMB market. I have helped scale companies from seed to Series A."
-        },
-        {
-          "role": "founderA",
-          "content": "That is exactly what we need! Would you be interested in scheduling a call to discuss further?"
-        },
-        {
-          "role": "founderB",
-          "content": "Absolutely! I would love to learn more about your vision and see if we might be a good fit. When works for you?"
-        }
-      ]
-    },
-    {
-      "id": "session_1762664964097_2_ddbg3bw0z",
-      "history": [
-        {
-          "role": "founderA",
-          "content": "Hi, I saw your profile and think we might be a good match. Technical co-founder with 5 years experience in AI/ML"
-        },
-        {
-          "role": "founderB",
-          "content": "Hello! Thanks for reaching out. Business co-founder with experience in B2B SaaS sales I would love to learn more about your background."
-        },
-        {
-          "role": "founderA",
-          "content": "I am looking for a co-founder to help build a new product. I think your background could complement mine well."
-        },
-        {
-          "role": "founderB",
-          "content": "That sounds interesting! I am definitely open to exploring opportunities. What kind of product are you working on?"
-        },
-        {
-          "role": "founderA",
-          "content": "I am building an AI-powered platform for small businesses. What is your experience with B2B sales?"
-        },
-        {
-          "role": "founderB",
-          "content": "I have 5 years of experience in B2B SaaS sales, particularly in the SMB market. I have helped scale companies from seed to Series A."
-        },
-        {
-          "role": "founderA",
-          "content": "That is exactly what we need! Would you be interested in scheduling a call to discuss further?"
-        },
-        {
-          "role": "founderB",
-          "content": "Absolutely! I would love to learn more about your vision and see if we might be a good fit. When works for you?"
-        }
-      ]
-    }
-  ]
-};
-
 export default function MatchingPage() {
-  const searchParams = useSearchParams();
   const [matchingData, setMatchingData] = useState<MatchingData | null>(null);
-  
-  const founderAUrl = searchParams.get('founderA');
-  const founderBUrl = searchParams.get('founderB');
+  const [founderAUrl, setFounderAUrl] = useState<string>('');
+  const [founderBUrl, setFounderBUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    // 在实际应用中，这里可能会调用API获取匹配数据
-    // 现在我们使用示例数据
-    setMatchingData(sampleData);
-  }, []);
+    // Get data from sessionStorage
+    try {
+      const storedMatchingData = sessionStorage.getItem('matchingData');
+      const storedFounderAUrl = sessionStorage.getItem('founderAUrl');
+      const storedFounderBUrl = sessionStorage.getItem('founderBUrl');
+
+      if (!storedMatchingData) {
+        // If no data available, redirect back to home
+        router.push('/');
+        return;
+      }
+
+      const parsedData = JSON.parse(storedMatchingData);
+      setMatchingData(parsedData);
+      setFounderAUrl(storedFounderAUrl || '');
+      setFounderBUrl(storedFounderBUrl || '');
+    } catch (error) {
+      console.error('Error loading matching data:', error);
+      router.push('/');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  const handleBackClick = () => {
+    // Clear sessionStorage when going back
+    sessionStorage.removeItem('matchingData');
+    sessionStorage.removeItem('founderAUrl');
+    sessionStorage.removeItem('founderBUrl');
+    router.push('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   if (!matchingData) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
+        <div className="text-center">
+          <div className="text-lg mb-4">No matching data found</div>
+          <button
+            onClick={handleBackClick}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            ← Back to Home
+          </button>
+        </div>
       </div>
     );
   }
@@ -161,27 +88,36 @@ export default function MatchingPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Co-founder Matching Results
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Found {matchingData.matchings.length} matching sessions
-              </p>
+            <div className="flex items-center">
+              <Image
+                src="/icon.png"
+                alt="Co-founder Matching Logo"
+                width={48}
+                height={48}
+                className="rounded-lg shadow-md mr-4"
+              />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Co-founder Matching Results
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Found {matchingData.matchings.length} matching sessions
+                </p>
+              </div>
             </div>
-            <Link 
-              href="/"
+            <button
+              onClick={handleBackClick}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
             >
               ← Back
-            </Link>
+            </button>
           </div>
           
-          {founderAUrl && founderBUrl && (
+          {(founderAUrl || founderBUrl) && (
             <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="text-sm text-gray-600 dark:text-gray-300">
-                <div><strong>Founder A:</strong> {founderAUrl}</div>
-                <div><strong>Founder B:</strong> {founderBUrl}</div>
+                {founderAUrl && <div><strong>Founder A:</strong> {founderAUrl}</div>}
+                {founderBUrl && <div><strong>Founder B:</strong> {founderBUrl}</div>}
               </div>
             </div>
           )}
